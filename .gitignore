@@ -1,0 +1,45 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.log
+*.sqlite3
+
+# Virtual Environment
+walley_venv/
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project specific
+*.csv
+*.json
+*.pkl
+*.log
+*.db
+*.sqlite3
+*.sqlite
+
+# Data files
+*.xlsx
+*.xls
+*.csv
+*.db
