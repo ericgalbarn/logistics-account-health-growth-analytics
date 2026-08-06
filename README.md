@@ -14,7 +14,7 @@ An end-to-end account analytics pipeline built with **Google BigQuery, SQL, and 
 
 *Single-page account health dashboard: 3 headline KPIs (At-Risk Accounts, Retention Rate, Late Delivery Rate), a full-width cohort retention heatmap, and a bottom row combining the delivery funnel, LTV-by-engagement chart, and account risk segment table. Filterable by Segment and Order Date range.*
 
-🔗 **[Explore the Interactive Power BI Dashboard →](https://app.powerbi.com/groups/me/reports/fe775c67-dc4b-479c-838b-df4008b30fbe/4ac668596509a7e2d0c6?ctid=246d1169-d80e-4f80-b3ff-c334c35a8798&experience=power-bi)**
+🔗 **[Explore the Interactive Power BI Dashboard →](https://app.powerbi.com/groups/me/reports/f08f90d9-17a8-47e3-a957-ff1398b576d4/4ac668596509a7e2d0c6?ctid=246d1169-d80e-4f80-b3ff-c334c35a8798&experience=power-bi)**
 
 ---
 
@@ -111,7 +111,7 @@ end-to-end-logistics-analytics/
 ├── requirements.txt                 # Python dependencies
 │
 ├── docs/
-│   └── TechnicalDocumentation.md    # Full methodology, SQL walkthroughs, data dictionary
+│   └── TechnicalDocumentation.md    # Full methodology, SQL walkthroughs, data dictionarydocum
 ├── powerbi/
 │   └── LogisticsDashboard.pbix    # PowerBI Dashboard files
 │
