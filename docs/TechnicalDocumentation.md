@@ -310,30 +310,37 @@ From **219,571** cleaned order-line records across **8,000** accounts:
 | Module | Headline Number | Business Context |
 |---|---|---|
 | Funnel | 111,814 → 97,579 → 47,823 → 28,654 (placed → shipped → delivered → on-time) | Biggest leak is Shipped→Delivered (51% loss), not on-time performance |
-| Cohort | ~58% retention at month 1, plateau ~50–60% through month 12+ | Retention risk is front-loaded to onboarding, not ongoing |
-| Churn/RFM | 44.3% of accounts (3,547) At Risk/Lapsed; value declines monotonically Growing→Lapsed | Strongest, most actionable finding — ranked BD call list |
+| Cohort | ~58% retention at month 1, plateau ~56% (dashboard KPI: 55.98%) through month 12+, individual cohorts observed out to month 29 for the earliest (Jan '24) cohort | Retention risk is front-loaded to onboarding, not ongoing |
+| Churn/RFM | 44.34% of accounts (3,547) At Risk/Lapsed; value declines monotonically Growing ($60,669) → Stable ($48,052) → At Risk ($37,546) → Lapsed ($29,497); overall average across all 8,000 accounts: $45,210 | Strongest, most actionable finding — ranked BD call list |
 | LTV | Flat ~$44–46K by segment/region | Null result — engagement (Module 3) is the real value driver |
 
 ### Dashboard Layout
 
+The dashboard shipped as a single page, titled **"Logistics Account Health & Growth"**, with 3 KPI cards rather than the 4 originally planned — a fourth "LTV Gap" card (Growing vs. Lapsed ratio) was built and then deliberately cut, since it only restated the two extreme bars of the adjacent LTV-by-segment chart without adding new information; the full chart already shows all four segments, so the ratio card was redundant rather than additive.
+
 ```
 ┌────────────────────────────────────────────────────────────────────────────────┐
-│                    ACCOUNT HEALTH & GROWTH — CONTROL VIEW                       │
-├────────────────────────────────────────────────────────────────────────────────┤
-│ [FILTER BAR: Region | Segment | Date range]                                    │
-├──────────────┬──────────────┬──────────────┬──────────────────────────────────┤
-│ 44% accounts │ ~55%         │ ~45% late    │ 2.1x Growing vs Lapsed LTV        │
-│ need attn.   │ retention    │ delivery     │                                    │
-│              │ plateau      │ rate         │                                    │
-├──────────────────────────────┬─────────────────────────────────────────────────┤
-│ [Delivery Funnel]             │ [Cohort Retention Heatmap]                     │
-│ Placed→Shipped→Delivered→     │ (Matrix: rows=cohort month, cols=month index,  │
-│ On Time (native funnel visual)│  conditional-formatting color scale)           │
-├────────────────────────────────────┬─────────────────────────────────────────┤
-│ [Account Risk Segments Table]      │ [LTV by Engagement Segment]              │
-│ Segment | Accounts | Avg LTV       │ (Clustered column: Growing→Lapsed)       │
-└────────────────────────────────────┴─────────────────────────────────────────┘
+│  Logistics Account Health & Growth                                              │
+├──────────────────┬───────────────────┬──────────────┬──────────────┬───────────┤
+│ [Segment ▾]       │ [Order Date range] │ 44.34%       │ 55.98%       │ 45.45%    │
+│                   │  slider            │ At-risk      │ Retention    │ Late      │
+│                   │                    │ Accounts     │ Rate         │ Delivery  │
+│                   │                    │              │              │ Rate      │
+├──────────────────┴───────────────────┴──────────────┴──────────────┴───────────┤
+│ Retention By Signup Cohort                                                      │
+│ (Matrix: rows = Cohort [signup month], columns = M0...M29,                     │
+│  conditional-formatting color scale; row length varies per cohort per the       │
+│  right-censoring fix — earlier cohorts (e.g. Jan '24) observed further out)     │
+├──────────────────────────────┬───────────────────────────┬──────────────────────┤
+│ Order-to-delivery Funnel      │ LTV by Engagement Segment │ Account Risk         │
+│ 1. Placed    111.8K           │ (Clustered column:        │ Segments (Table)     │
+│ 2. Shipped   97.6K (87%)      │  Growing → Stable →       │ Segment | Accounts |  │
+│ 3. Delivered 47.8K (49%)      │  At Risk → Lapsed)        │ Avg LTV, + Total row  │
+│ 4. On Time   28.7K (60%)      │                            │ (8,000 | $45,210)    │
+└──────────────────────────────┴───────────────────────────┴──────────────────────┘
 ```
+
+**Filters implemented:** Segment (dropdown) and Order Date (continuous range slider, 1/1/2024–7/30/2026). A Region slicer and an account-level drill-through page were both designed and scoped during planning but ultimately **not built** — the drill-through was cut as unnecessary complexity for the current scope (see [Future Work](#future-work)), and the region filter was dropped in favor of keeping the filter bar minimal, since `order_region`/`order_state` sit on the order-line-grain `mart_funnel` table and don't cleanly cross-filter the customer-grain churn/LTV visuals without additional bridge-table work (also noted under Future Work).
 
 ---
 
@@ -405,10 +412,11 @@ Expected: all referential integrity checks return 0 orphaned rows.
 ### Step 7 — Connect Power BI
 Connect Power BI Desktop to BigQuery, import `mart_funnel`, `mart_cohort`, `mart_churn_rfm`, `mart_ltv`, `dim_customer`, `dim_date`. Build:
 - Native **Funnel** visual on a small DAX summary table (`FunnelStages`)
-- **Matrix** visual with conditional-formatting color scale for the cohort heatmap (requires a `RetentionRate` measure: `DIVIDE(SUM(mart_cohort[retention_pct]), 100)`, since the SQL column is already a 0–100 percentage, not a 0–1 fraction)
-- **Table** visual for the risk segment breakdown
+- **Matrix** visual with conditional-formatting color scale for the cohort heatmap (requires a `RetentionRate` measure: `DIVIDE(SUM(mart_cohort[retention_pct]), 100)`, since the SQL column is already a 0–100 percentage, not a 0–1 fraction; row/column labels renamed for display via calculated columns `CohortLabel`/`MonthLabel`, sorted by the underlying date/index columns)
+- **Table** visual for the risk segment breakdown, including a Total row (8,000 accounts, $45,210 average LTV)
 - **Clustered column** chart for LTV by segment
-- **Card** visuals + slicers for the KPI/filter row
+- **3 Card visuals** for the KPI row: At-risk Accounts (%), Retention Rate (%), Late Delivery Rate (%) — a 4th "LTV Gap" card was built and then removed as redundant with the LTV-by-segment chart (see [Key Findings & Dashboard Layout](#key-findings--dashboard-layout))
+- **2 Slicers**: Segment (dropdown) and Order Date (continuous range). A Region slicer and an account-level drill-through page were scoped but not built — see [Future Work](#future-work)
 
 ---
 
@@ -431,5 +439,5 @@ This project is transparent about its scope and constraints:
 - **Logistic regression churn model** in Python (scikit-learn), using `recency_days`, `frequency`, `monetary`, and `avg_delivery_delay` (already computed in `mart_churn_rfm`) as features, to produce a probabilistic churn-risk score alongside the current rule-based RFM segment.
 - **Root-cause breakdown of the Shipped→Delivered funnel drop-off** — joining `mart_funnel` against detailed `order_status` categories to separate cancellations, fraud holds, and processing delays, since the current funnel treats "not delivered" as one bucket.
 - **Automated refresh + alerting** — BigQuery scheduled queries to refresh the mart views, paired with a Power Automate flow that detects accounts newly entering the At Risk/Lapsed segment and sends a summary notification, rather than relying on someone remembering to check the dashboard.
-- **Account drill-through page** in Power BI — a single-account detail view (shipment volume trend, on-time delivery history, risk-score trend) triggered by clicking a row in the risk table, giving BD reps account-level detail without leaving the dashboard.
-- **Filter cross-model relationships** — `mart_funnel` and `mart_cohort` currently sit at order-line and cohort-month grain respectively, which limits how cleanly region/date slicers can cross-filter them against the customer-grain `mart_churn_rfm`/`mart_ltv` views; a future iteration could add bridge tables to unify filtering across all four modules.
+- **Account drill-through page** in Power BI — a single-account detail view (shipment volume trend, on-time delivery history, risk-score trend) triggered by clicking a row in the risk table. This was designed and prototyped during development but deliberately cut from the shipped dashboard as unnecessary complexity for the current scope — the account risk table already surfaces the individual `customer_id`-level rows needed for BD triage without an extra page.
+- **Region slicer + filter cross-model relationships** — a Region slicer was scoped but not included in the final filter bar (kept to Segment + Order Date only), since `order_region`/`order_state` live on the order-line-grain `mart_funnel` table and don't cleanly cross-filter the customer-grain `mart_churn_rfm`/`mart_ltv` visuals without additional bridge-table work; a future iteration could add that bridge to support region filtering across all four modules consistently.

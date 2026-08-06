@@ -10,7 +10,9 @@ An end-to-end account analytics pipeline built with **Google BigQuery, SQL, and 
 
 ## 📸 Dashboard Preview
 
-*4-panel account health dashboard: KPI summary, delivery funnel, cohort retention heatmap, and churn-risk segment breakdown with LTV by engagement level.*
+![Logistics Account Health & Growth Dashboard](screenshot/01_dashboard_preview.png)
+
+*Single-page account health dashboard: 3 headline KPIs (At-Risk Accounts, Retention Rate, Late Delivery Rate), a full-width cohort retention heatmap, and a bottom row combining the delivery funnel, LTV-by-engagement chart, and account risk segment table. Filterable by Segment and Order Date range.*
 
 🔗 **[Explore the Interactive Power BI Dashboard →](https://app.powerbi.com/groups/me/reports/fe775c67-dc4b-479c-838b-df4008b30fbe/4ac668596509a7e2d0c6?ctid=246d1169-d80e-4f80-b3ff-c334c35a8798&experience=power-bi)**
 
@@ -36,12 +38,11 @@ From **219,571 cleaned order-line records** (after deduplication) spanning **8,0
 | Module | Finding | What It Means |
 |---|---|---|
 | **Delivery Funnel** | 111,814 orders placed → 97,579 shipped (87%) → 47,823 delivered (49% of shipped) → 28,654 delivered on-time (60% of delivered) | The single biggest leak isn't lateness — it's the **Shipped → Delivered** stage, where 51% of shipped orders never reach a completed-delivery status at all. |
-| **Cohort Retention** | Retention drops sharply in month 1, then stabilizes into a noisy **50–60% plateau** through month 12+, rather than continuing to decay | The critical retention-intervention window is the first 30 days post-onboarding, not ongoing win-back efforts at month 6+. |
-| **Churn Risk (RFM)** | **44.3% of accounts (3,547 of 8,000)** are segmented "At Risk" or "Lapsed"; average account value declines monotonically across segments — Growing $60.7K → Stable $48.1K → At Risk $37.5K → Lapsed $29.5K | Engagement level (recency/frequency/monetary) predicts account value **far better** than any firmographic attribute — this is the strongest, most actionable finding in the project. |
-| **LTV** | LTV shows **no meaningful variation** by customer segment (Consumer/Corporate/Home Office) or by shipping region (tight $44K–$46K band across every group) | Tested and ruled out as a targeting axis — BD should prioritize by engagement/RFM segment, not industry or geography. |
-| **Delivery reliability by mode/region** | Late-delivery rate is flat (~45%) across every shipping mode and every region (44.8%–46.1% band) | No single carrier, mode, or lane explains delay risk — the issue is systemic, not localized. Tested and ruled out rather than assumed. |
+| **Cohort Retention** | Retention drops sharply in month 1, then stabilizes into a noisy **~56% plateau** (dashboard KPI: 55.98%) through month 12+, rather than continuing to decay | The critical retention-intervention window is the first 30 days post-onboarding, not ongoing win-back efforts at month 6+. |
+| **Churn Risk (RFM)** | **44.34% of accounts (3,547 of 8,000)** are segmented "At Risk" or "Lapsed"; average account value declines monotonically across segments — Growing $60.7K → Stable $48.1K → At Risk $37.5K → Lapsed $29.5K (overall average across all accounts: $45,210) | Engagement level (recency/frequency/monetary) predicts account value **far better** than any firmographic attribute — this is the strongest, most actionable finding in the project. |
+| **LTV** | LTV shows **no meaningful variation** by customer segment (Consumer/Corporate/Home Office) or by shipping region (tight $44K–$46K band across every group) | Tested and ruled out as a targeting axis — BD should prioritize by engagement/RFM segment, not industry or geography. A dedicated "LTV Gap" KPI card was considered but cut from the dashboard as redundant with the LTV-by-segment chart already showing all four segments. |
+| **Delivery reliability by mode/region** | Late-delivery rate is flat (dashboard KPI: 45.45%) across every shipping mode and every region (44.8%–46.1% band) | No single carrier, mode, or lane explains delay risk — the issue is systemic, not localized. Tested and ruled out rather than assumed. |
 
-Two of these five findings are **honest null results** (LTV-by-segment, reliability-by-mode) — reported as such rather than forced into a more dramatic story that the data doesn't support. Full reasoning for every module: see [Technical Documentation](docs/TechnicalDocumentation.md#key-findings--dashboard-layout).
 
 ---
 
@@ -111,6 +112,8 @@ end-to-end-logistics-analytics/
 │
 ├── docs/
 │   └── TechnicalDocumentation.md    # Full methodology, SQL walkthroughs, data dictionary
+├── powerbi/
+│   └── LogisticsDashboard.pbix    # PowerBI Dashboard files
 │
 ├── dataset/
 │   ├── DataCoSupplyChainDataset.csv       # Public reference dataset (schema source)
@@ -138,20 +141,6 @@ end-to-end-logistics-analytics/
     ├── 13_mart_ltv.sql                  # mart_ltv (Module 4)
     └── 14_validation_mart_ltv.sql       # LTV validation queries
 ```
-
----
-
-## 🔭 Scope & Roadmap
-
-This project is intentionally scoped as a **SQL-based data analytics and BI pipeline** — it demonstrates data cleaning at production-messiness scale, dimensional modeling, RFM segmentation, and dashboard storytelling for a business audience. It is **not** presented as a live operational system.
-
-Planned next phases:
-- **Logistic regression churn model** in Python (scikit-learn), trained on recency/frequency/monetary/delivery-delay features, to complement the current rule-based RFM segmentation with a probabilistic risk score
-- **Automated refresh + alerting** (BigQuery scheduled queries → Power Automate flow) to notify BD when an account newly enters the At Risk/Lapsed segment, rather than requiring a manual dashboard check
-- **Account drill-through page** in Power BI for single-account detail views (volume trend, delivery history, risk-score trend over time)
-- **Root-cause breakdown of the Shipped→Delivered funnel drop-off** by `order_status` category, to separate cancellations from fraud holds from processing delays
-
-See [Limitations & Assumptions](docs/TechnicalDocumentation.md#limitations--assumptions) for full detail, including why two of the five headline findings are reported as null results rather than forced into a stronger-sounding story.
 
 ---
 
